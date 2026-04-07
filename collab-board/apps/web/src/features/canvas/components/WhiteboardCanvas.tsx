@@ -95,7 +95,7 @@ export default function WhiteboardCanvas({user,membership}:WhiteboardCanvasProps
   return(
     <div className="flex-1 relative overflow-hidden bg-gray-800">
       <Toolbar tool={tool} color={color} brushSize={brushSize} canWrite={canWrite} isAdmin={isAdmin} onToolChange={setTool} onColorChange={setColor} onBrushSizeChange={setBrushSize} onUndo={undoStroke} onClear={()=>{if(window.confirm("Clear the entire canvas? This cannot be undone."))clearCanvas();}} onExport={handleExport} onExpand={expandCanvas}/>
-      <div className="w-full h-full overflow-auto relative">
+      <div className="w-full h-full overflow-auto relative [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
         <div className="relative block" style={{width:canvasSize.width,height:canvasSize.height}}>
           <canvas ref={canvasRef} width={canvasSize.width} height={canvasSize.height} className={`block ${cursorStyle}`} style={{touchAction:"none"}} onMouseDown={handleMouseDown} onMouseMove={handleMouseMove} onMouseUp={handleMouseUp} onMouseLeave={handleMouseLeave}/>
           <canvas ref={overlayRef} width={canvasSize.width} height={canvasSize.height} className={`absolute inset-0 pointer-events-none ${cursorStyle}`} style={{touchAction:"none"}}/>
