@@ -51,15 +51,19 @@ const server=new Server({
     const membership=await getRoomMembership(payload.userId,roomCode);
     if(!membership) throw new Error("User is not a member of this room");
     const canWrite=membership.role==="ADMIN"||membership.canWrite;
-    connection.readOnly=!canWrite;
+    if(connection) connection.readOnly=!canWrite;
     console.log(`[AUTH] ✅ User ${payload.userId} authenticated for room ${roomCode} | role: ${membership.role} | readOnly: ${!canWrite}`);
-    return {
+    return{
       userId:payload.userId,
       roomCode,
       role:membership.role,
       canWrite,
-      canVideo:membership.role==="ADMIN"||membership.canVideo
+      canVideo:membership.role==="ADMIN"||membership.canVideo,
+      readOnly:!canWrite
     };
+  },
+  async connected(data){
+    if(data.context&&data.context.readOnly) data.connection.readOnly=true;
   },
   async onConnect(data){
     console.log(`[WS] Client connected to room: ${data.documentName}`);
@@ -72,5 +76,3 @@ const server=new Server({
 server.listen().then(()=>{
   console.log(`✅ Hocuspocus server listening on port ${PORT}`);
 });
-
-//collab-board\apps\hocuspocus\src\server.ts
