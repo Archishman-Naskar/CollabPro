@@ -1,5 +1,8 @@
 "use client";
 
+// apps/web/src/app/room/[roomCode]/RoomShell.tsx
+// Phase 4: Replaced placeholder div with <WhiteboardCanvas>
+
 import Link from "next/link";
 import {
   ArrowLeft,
@@ -13,6 +16,7 @@ import {
 } from "lucide-react";
 import { useYjs } from "@/lib/yjs/provider";
 import { usePresence } from "@/features/canvas/hooks/usePresence";
+import WhiteboardCanvas from "@/features/canvas/components/WhiteboardCanvas";
 
 interface RoomShellProps {
   roomCode: string;
@@ -99,7 +103,7 @@ export default function RoomShell({
 
   return (
     <div className="h-screen flex flex-col bg-gray-950 text-white overflow-hidden">
-      {/* Top Navbar */}
+      {/* ── Top Navbar ──────────────────────────────────────────────────── */}
       <nav className="h-14 border-b border-gray-800 flex items-center justify-between px-4 flex-shrink-0 bg-gray-950/90 backdrop-blur-sm z-30">
         {/* Left: Back + Room Info */}
         <div className="flex items-center gap-3">
@@ -112,9 +116,7 @@ export default function RoomShell({
 
           <div>
             <h1 className="font-semibold text-sm leading-none">{roomName}</h1>
-            <p className="text-gray-500 text-xs font-mono mt-0.5">
-              {roomCode}
-            </p>
+            <p className="text-gray-500 text-xs font-mono mt-0.5">{roomCode}</p>
           </div>
 
           {/* Role badge */}
@@ -140,7 +142,6 @@ export default function RoomShell({
 
         {/* Right: Presence + Connection */}
         <div className="flex items-center gap-4">
-          {/* Online users */}
           {presenceUsers.length > 0 && (
             <div className="flex items-center gap-2">
               <div className="flex -space-x-2">
@@ -167,11 +168,11 @@ export default function RoomShell({
         </div>
       </nav>
 
-      {/* Main Canvas Area — Placeholder for Phase 4 */}
-      <div className="flex-1 flex items-center justify-center overflow-hidden relative">
-        {/* Connection overlay */}
+      {/* ── Main area ───────────────────────────────────────────────────── */}
+      <div className="flex-1 flex flex-col overflow-hidden relative">
+        {/* Connection/auth overlay — sits above canvas while not ready */}
         {(!isConnected || !isAuthenticated) && (
-          <div className="absolute inset-0 bg-gray-950/80 flex items-center justify-center z-20 backdrop-blur-sm">
+          <div className="absolute inset-0 bg-gray-950/80 flex items-center justify-center z-40 backdrop-blur-sm">
             <div className="text-center">
               <Loader2 className="w-8 h-8 animate-spin text-blue-400 mx-auto mb-3" />
               <p className="text-white font-medium">
@@ -184,36 +185,13 @@ export default function RoomShell({
           </div>
         )}
 
-        {/* Placeholder */}
-        <div className="text-center">
-          <div className="w-16 h-16 bg-gray-800 rounded-2xl flex items-center justify-center mx-auto mb-4">
-            <PenLine className="w-8 h-8 text-gray-600" />
-          </div>
-          <h2 className="text-xl font-semibold text-gray-400 mb-2">
-            Canvas coming in Phase 4
-          </h2>
-          <p className="text-gray-600 text-sm max-w-sm">
-            Real-time Yjs connection is live. Presence awareness is active.
-            The whiteboard canvas will be built next.
-          </p>
-
-          {isAuthenticated && (
-            <div className="mt-6 p-4 bg-green-500/10 border border-green-500/20 rounded-xl inline-block">
-              <p className="text-green-400 text-sm font-medium">
-                ✅ Yjs connection established
-              </p>
-              <p className="text-green-600 text-xs mt-1">
-                {presenceUsers.length} user{presenceUsers.length !== 1 ? "s" : ""}{" "}
-                in this room right now
-              </p>
-            </div>
-          )}
-        </div>
+        {/* ── Whiteboard Canvas (Phase 4) ─────────────────────────────── */}
+        <WhiteboardCanvas user={user} membership={membership} />
       </div>
 
-      {/* Bottom presence bar (mobile-friendly) */}
+      {/* ── Bottom presence bar (mobile) ────────────────────────────────── */}
       {presenceUsers.length > 0 && (
-        <div className="h-10 border-t border-gray-800 flex items-center px-4 gap-3 flex-shrink-0 bg-gray-950/80">
+        <div className="h-10 border-t border-gray-800 flex items-center px-4 gap-3 flex-shrink-0 bg-gray-950/80 z-30">
           <span className="text-xs text-gray-600">Online:</span>
           <div className="flex items-center gap-2 overflow-x-auto">
             {presenceUsers.map((u) => (
@@ -226,9 +204,7 @@ export default function RoomShell({
                   style={{ backgroundColor: u.color }}
                 />
                 {u.name}
-                {u.isSelf && (
-                  <span className="text-gray-600">(you)</span>
-                )}
+                {u.isSelf && <span className="text-gray-600">(you)</span>}
               </span>
             ))}
           </div>
