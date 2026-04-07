@@ -1,6 +1,8 @@
 import { auth } from "@/lib/auth";
 import { redirect } from "next/navigation";
 import { prisma } from "@/lib/db";
+import jwt from "jsonwebtoken";
+import RoomClient from "./RoomClient";
 
 interface PageProps {
   params: Promise<{ roomCode: string }>;
@@ -12,40 +14,55 @@ export default async function RoomPage({ params }: PageProps) {
 
   const { roomCode } = await params;
 
+  // Find room
   const room = await prisma.room.findUnique({ where: { code: roomCode } });
-  if (!room) redirect("/home");
+  if (!room) redirect("/home?error=room-not-found");
+
+  // Check membership
+  const membership = await prisma.roomMember.findUnique({
+    where: {
+      userId_roomId: { userId: session.user.id, roomId: room.id },
+    },
+  });
+
+  if (!membership) {
+    // Not a member — redirect home with a message
+    redirect("/home?error=not-a-member");
+  }
 
   // Update lastAccessed
-  await prisma.roomMember.updateMany({
-    where: { userId: session.user.id, roomId: room.id },
+  await prisma.roomMember.update({
+    where: { id: membership.id },
     data: { lastAccessed: new Date() },
   });
 
-  const membership = await prisma.roomMember.findUnique({
-    where: { userId_roomId: { userId: session.user.id, roomId: room.id } },
-  });
+  const canWrite = membership.role === "ADMIN" || membership.canWrite;
+  const canVideo = membership.role === "ADMIN" || membership.canVideo;
+
+  // Generate a short-lived token for Hocuspocus
+  const hocuspocusToken = jwt.sign(
+    {
+      userId: session.user.id,
+      roomCode,
+      role: membership.role,
+      canWrite,
+      canVideo,
+    },
+    process.env.AUTH_SECRET!,
+    { expiresIn: "12h" }
+  );
 
   return (
-    <div className="min-h-screen bg-gray-950 text-white flex flex-col items-center justify-center gap-4">
-      <div className="text-center">
-        <h1 className="text-3xl font-bold mb-2">{room.name}</h1>
-        <p className="text-gray-400 font-mono text-sm">{room.code}</p>
-        <p className="text-gray-500 mt-2">
-          Your role:{" "}
-          <span className="text-blue-400 font-semibold">
-            {membership?.role ?? "Not a member"}
-          </span>
-        </p>
-        <p className="text-gray-600 text-sm mt-1">
-          Whiteboard canvas coming in Phase 3.
-        </p>
-      </div>
-      <a
-        href="/home"
-        className="px-6 py-2.5 bg-gray-800 hover:bg-gray-700 rounded-lg transition-colors text-sm"
-      >
-        ← Back to Dashboard
-      </a>
-    </div>
+    <RoomClient
+      roomCode={roomCode}
+      roomName={room.name}
+      token={hocuspocusToken}
+      user={{
+        id: session.user.id,
+        name: session.user.name ?? null,
+        image: session.user.image ?? null,
+      }}
+      membership={{ role: membership.role, canWrite, canVideo }}
+    />
   );
 }

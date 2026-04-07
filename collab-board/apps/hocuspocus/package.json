@@ -11,9 +11,11 @@
     "@hocuspocus/extension-database": "latest",
     "@hocuspocus/extension-logger": "latest",
     "@hocuspocus/server": "latest",
+    "@neondatabase/serverless": "^1.0.2",
     "@prisma/client": "latest",
     "@upstash/ratelimit": "latest",
     "@upstash/redis": "latest",
+    "dotenv": "^16.6.1",
     "jsonwebtoken": "^9.0.2",
     "zod": "^3.24.2"
   },
