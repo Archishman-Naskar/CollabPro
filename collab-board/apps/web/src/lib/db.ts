@@ -1,14 +1,19 @@
-import {PrismaClient} from "@prisma/client";
-import {Pool} from "@neondatabase/serverless";
-import {PrismaNeon} from "@prisma/adapter-neon";
+import { PrismaClient } from "@prisma/client";
+import { PrismaNeon } from "@prisma/adapter-neon";
 
-const pool=new Pool({connectionString:process.env.DATABASE_URL});
-const adapter = new PrismaNeon(pool as any);
-const globalForPrisma=global as unknown as {prisma:PrismaClient};
+const globalForPrisma = global as unknown as { prisma: PrismaClient };
 
-export const prisma=globalForPrisma.prisma||new PrismaClient({
-  adapter,
-  log:process.env.NODE_ENV==="development"?["error","warn"]:["error"],
-});
+function createPrismaClient() {
+  const adapter = new PrismaNeon({
+    connectionString: process.env.DATABASE_URL!,
+  });
 
-if(process.env.NODE_ENV!=="production") globalForPrisma.prisma=prisma;
+  return new PrismaClient({
+    adapter,
+    log: process.env.NODE_ENV === "development" ? ["error", "warn"] : ["error"],
+  });
+}
+
+export const prisma = globalForPrisma.prisma || createPrismaClient();
+
+if (process.env.NODE_ENV !== "production") globalForPrisma.prisma = prisma;
