@@ -50,8 +50,9 @@ export default function TextBoard({
   // StarterKit history is disabled because Yjs manages the document history.
   // The Collaboration extension calls ydoc.getXmlFragment("board-<id>") internally.
   const editor = useEditor({
+    immediatelyRender:false,
     extensions: [
-      StarterKit.configure({ history: false }),
+      StarterKit.configure({ undoRedo: false }),
       Collaboration.configure({ document: ydoc, field: `board-${board.id}` }),
     ],
     editable: canWrite,
