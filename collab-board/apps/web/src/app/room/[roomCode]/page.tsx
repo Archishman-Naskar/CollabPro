@@ -14,37 +14,30 @@ export default async function RoomPage({ params }: PageProps) {
 
   const { roomCode } = await params;
 
-  // Find room
   const room = await prisma.room.findUnique({ where: { code: roomCode } });
   if (!room) redirect("/home?error=room-not-found");
 
-  // Check membership
   const membership = await prisma.roomMember.findUnique({
     where: {
       userId_roomId: { userId: session.user.id, roomId: room.id },
     },
   });
 
-  if (!membership) {
-    // Not a member — redirect home with a message
-    redirect("/home?error=not-a-member");
-  }
+  if (!membership) redirect("/home?error=not-a-member");
 
-  // Update lastAccessed
   await prisma.roomMember.update({
-    where: { id: membership.id },
+    where: { id: membership!.id },
     data: { lastAccessed: new Date() },
   });
 
-  const canWrite = membership.role === "ADMIN" || membership.canWrite;
-  const canVideo = membership.role === "ADMIN" || membership.canVideo;
+  const canWrite = membership!.role === "ADMIN" || membership!.canWrite;
+  const canVideo = membership!.role === "ADMIN" || membership!.canVideo;
 
-  // Generate a short-lived token for Hocuspocus
   const hocuspocusToken = jwt.sign(
     {
       userId: session.user.id,
       roomCode,
-      role: membership.role,
+      role: membership!.role,
       canWrite,
       canVideo,
     },
@@ -55,6 +48,7 @@ export default async function RoomPage({ params }: PageProps) {
   return (
     <RoomClient
       roomCode={roomCode}
+      roomId={room.id}          // ← NEW
       roomName={room.name}
       token={hocuspocusToken}
       user={{
@@ -62,7 +56,7 @@ export default async function RoomPage({ params }: PageProps) {
         name: session.user.name ?? null,
         image: session.user.image ?? null,
       }}
-      membership={{ role: membership.role, canWrite, canVideo }}
+      membership={{ role: membership!.role, canWrite, canVideo }}
     />
   );
 }

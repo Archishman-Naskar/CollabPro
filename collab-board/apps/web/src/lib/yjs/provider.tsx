@@ -7,6 +7,7 @@ import {
   useState,
   useRef,
   useMemo,
+  useCallback,
   ReactNode,
 } from "react";
 import { HocuspocusProvider } from "@hocuspocus/provider";
@@ -25,6 +26,9 @@ interface YjsContextValue {
   isConnected: boolean;
   isAuthenticated: boolean;
   awareness: HocuspocusProvider["awareness"] | null;
+  // NEW: disconnect + reconnect the existing provider with a fresh token.
+  // Does NOT recreate the provider — preserves the awareness object and clientID.
+  reconnectWithToken: (newToken: string) => void;
 }
 
 const YjsContext = createContext<YjsContextValue | null>(null);
@@ -65,6 +69,16 @@ export function YjsProvider({
   user,
 }: YjsProviderProps) {
   const ydocRef = useRef<Y.Doc>(new Y.Doc());
+
+  // Store the current token in a ref so the provider's token callback always
+  // reads the latest value without needing to recreate the provider.
+  const tokenRef = useRef<string>(token);
+  tokenRef.current = token; // keep in sync on every render
+
+  // Keep a ref to the live provider so reconnectWithToken can access it
+  // without needing it as a useCallback dependency.
+  const providerRef = useRef<HocuspocusProvider | null>(null);
+
   const [provider, setProvider] = useState<HocuspocusProvider | null>(null);
   const [isConnected, setIsConnected] = useState(false);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
@@ -77,24 +91,25 @@ export function YjsProvider({
       url: process.env.NEXT_PUBLIC_HOCUSPOCUS_URL!,
       name: roomCode,
       document: doc,
-      token,
+      // Use a callback so the provider always reads tokenRef.current.
+      // This means calling disconnect() + connect() on the same provider
+      // instance will authenticate with whatever token is in the ref at
+      // that moment — no provider teardown required.
+      token: () => tokenRef.current,
 
       onConnect() {
-        console.log("[Yjs] Connected to Hocuspocus");
         setIsConnected(true);
       },
 
       onDisconnect() {
-        console.log("[Yjs] Disconnected from Hocuspocus");
         setIsConnected(false);
         setIsAuthenticated(false);
       },
 
       onAuthenticated() {
-        console.log("[Yjs] Authenticated");
         setIsAuthenticated(true);
-
-        // Set our presence in the awareness protocol
+        // Set awareness on the SAME provider instance every time it
+        // authenticates (including after a disconnect/reconnect cycle).
         hocuspocusProvider.setAwarenessField("user", {
           id: user.id,
           name: user.name ?? "Anonymous",
@@ -108,15 +123,35 @@ export function YjsProvider({
       },
     });
 
+    providerRef.current = hocuspocusProvider;
     setProvider(hocuspocusProvider);
 
     return () => {
       hocuspocusProvider.destroy();
+      providerRef.current = null;
       setProvider(null);
       setIsConnected(false);
       setIsAuthenticated(false);
     };
-  }, [roomCode, token, user.id, user.name, user.image]);
+    // ⚠️  token is intentionally NOT in this dep array.
+    // Changing the token updates tokenRef.current (above) and triggers a
+    // disconnect/reconnect via reconnectWithToken — not a provider rebuild.
+  }, [roomCode, user.id, user.name, user.image]);
+
+  // Soft reconnect: update the token ref then cycle the WebSocket connection.
+  // The same HocuspocusProvider instance is reused, which means:
+  //   • same Y.Doc
+  //   • same Awareness object and clientID
+  //   • awareness re-broadcast fires correctly in onAuthenticated
+  const reconnectWithToken = useCallback((newToken: string) => {
+    tokenRef.current = newToken;
+    const p = providerRef.current;
+    if (!p) return;
+    p.disconnect();
+    // Brief pause lets the disconnect propagate to peers before the new
+    // connection arrives, keeping server-side state clean.
+    setTimeout(() => p.connect(), 150);
+  }, []); // stable — never changes
 
   const contextValue = useMemo<YjsContextValue>(
     () => ({
@@ -125,8 +160,9 @@ export function YjsProvider({
       isConnected,
       isAuthenticated,
       awareness: provider?.awareness ?? null,
+      reconnectWithToken,
     }),
-    [provider, isConnected, isAuthenticated]
+    [provider, isConnected, isAuthenticated, reconnectWithToken]
   );
 
   return (
