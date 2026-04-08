@@ -1,7 +1,7 @@
 "use client";
 
 // apps/web/src/app/room/[roomCode]/RoomShell.tsx
-// Phase 4: Replaced placeholder div with <WhiteboardCanvas>
+// Phase 5: Added <BoardContainer> overlay for floating text and image boards.
 
 import Link from "next/link";
 import {
@@ -17,6 +17,7 @@ import {
 import { useYjs } from "@/lib/yjs/provider";
 import { usePresence } from "@/features/canvas/hooks/usePresence";
 import WhiteboardCanvas from "@/features/canvas/components/WhiteboardCanvas";
+import BoardContainer from "@/features/boards/components/BoardContainer";
 
 interface RoomShellProps {
   roomCode: string;
@@ -101,6 +102,9 @@ export default function RoomShell({
   const { isConnected, isAuthenticated } = useYjs();
   const presenceUsers = usePresence(user.id);
 
+  // Derived permission — same logic as Hocuspocus server and page.tsx
+  const canWrite = membership.role === "ADMIN" || membership.canWrite;
+
   return (
     <div className="h-screen flex flex-col bg-gray-950 text-white overflow-hidden">
       {/* ── Top Navbar ──────────────────────────────────────────────────── */}
@@ -170,7 +174,7 @@ export default function RoomShell({
 
       {/* ── Main area ───────────────────────────────────────────────────── */}
       <div className="flex-1 flex flex-col overflow-hidden relative">
-        {/* Connection/auth overlay — sits above canvas while not ready */}
+        {/* Connection/auth overlay — sits above everything while not ready */}
         {(!isConnected || !isAuthenticated) && (
           <div className="absolute inset-0 bg-gray-950/80 flex items-center justify-center z-40 backdrop-blur-sm">
             <div className="text-center">
@@ -187,6 +191,13 @@ export default function RoomShell({
 
         {/* ── Whiteboard Canvas (Phase 4) ─────────────────────────────── */}
         <WhiteboardCanvas user={user} membership={membership} />
+
+        {/* ── Board overlay (Phase 5) ─────────────────────────────────── */}
+        {/* Rendered only once connected so the ydoc is synced.
+            BoardContainer is pointer-events-none; individual boards are auto. */}
+        {isAuthenticated && (
+          <BoardContainer userId={user.id} canWrite={canWrite} />
+        )}
       </div>
 
       {/* ── Bottom presence bar (mobile) ────────────────────────────────── */}

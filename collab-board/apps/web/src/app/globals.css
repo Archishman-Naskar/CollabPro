@@ -24,3 +24,80 @@ body {
   color: var(--foreground);
   font-family: Arial, Helvetica, sans-serif;
 }
+
+/* ── TipTap collaborative editor styles ─────────────────────────────────── */
+
+.collabboard-editor {
+  outline: none;
+  min-height: 80px;
+  color: #1f2937;
+  font-size: 0.875rem;
+  line-height: 1.5;
+}
+
+.collabboard-editor p {
+  margin: 0 0 0.25rem 0;
+}
+
+.collabboard-editor p:last-child {
+  margin-bottom: 0;
+}
+
+.collabboard-editor p.is-editor-empty:first-child::before {
+  content: attr(data-placeholder);
+  float: left;
+  color: #9ca3af;
+  pointer-events: none;
+  height: 0;
+}
+
+.collabboard-editor strong {
+  font-weight: 600;
+}
+
+.collabboard-editor em {
+  font-style: italic;
+}
+
+.collabboard-editor ul,
+.collabboard-editor ol {
+  padding-left: 1.25rem;
+  margin: 0.25rem 0;
+}
+
+.collabboard-editor li {
+  margin: 0.1rem 0;
+}
+
+.collabboard-editor h1 {
+  font-size: 1.25rem;
+  font-weight: 700;
+  margin: 0.25rem 0;
+}
+
+.collabboard-editor h2 {
+  font-size: 1.1rem;
+  font-weight: 600;
+  margin: 0.25rem 0;
+}
+
+.collabboard-editor h3 {
+  font-size: 1rem;
+  font-weight: 600;
+  margin: 0.25rem 0;
+}
+
+.collabboard-editor code {
+  background: #f3f4f6;
+  border-radius: 3px;
+  padding: 0 3px;
+  font-family: monospace;
+  font-size: 0.8rem;
+}
+
+.collabboard-editor blockquote {
+  border-left: 3px solid #d1d5db;
+  padding-left: 0.75rem;
+  color: #6b7280;
+  margin: 0.25rem 0;
+}
