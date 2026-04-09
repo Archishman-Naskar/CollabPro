@@ -30,6 +30,7 @@
     "cloudinary": "^2.9.0",
     "jsonwebtoken": "^9.0.3",
     "livekit-client": "^2.18.1",
+    "livekit-server-sdk": "^2.15.1",
     "lucide-react": "^1.7.0",
     "nanoid": "^3.3.11",
     "next": "16.2.2",

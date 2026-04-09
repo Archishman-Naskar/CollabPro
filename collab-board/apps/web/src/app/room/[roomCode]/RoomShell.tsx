@@ -17,6 +17,7 @@ import { usePresence } from "@/features/canvas/hooks/usePresence";
 import WhiteboardCanvas from "@/features/canvas/components/WhiteboardCanvas";
 import BoardContainer from "@/features/boards/components/BoardContainer";
 import MembersPanel from "@/features/rbac/components/MembersPanel";
+import VideoPanel from "@/features/video/components/VideoPanel";
 
 interface RoomShellProps {
   roomCode: string;
@@ -208,6 +209,14 @@ export default function RoomShell({
         {/* Board overlay (Phase 5) */}
         {isAuthenticated && (
           <BoardContainer userId={user.id} canWrite={canWrite} />
+        )}
+        
+        {/* ── Video Panel (Phase 7) ─────────────────────────────────── */}
+        {isAuthenticated && (
+          <VideoPanel
+            roomId={roomId}
+            canVideo={membership.role === "ADMIN" || membership.canVideo}
+          />
         )}
       </div>
 
